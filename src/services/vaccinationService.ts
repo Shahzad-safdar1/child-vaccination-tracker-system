@@ -1,4 +1,6 @@
 
+import { apiService } from './apiService';
+
 export interface Child {
   id: string;
   name: string;
@@ -13,105 +15,52 @@ export interface Child {
 }
 
 class VaccinationService {
-  private storageKey = 'vaccination_records';
-
-  getAll(): Child[] {
+  async getAll(): Promise<Child[]> {
     try {
-      const data = localStorage.getItem(this.storageKey);
-      return data ? JSON.parse(data) : this.getInitialData();
+      return await apiService.getAll();
     } catch (error) {
       console.error('Error loading vaccination records:', error);
-      return this.getInitialData();
+      // Fallback to localStorage if API fails
+      return this.getFromLocalStorage();
     }
   }
 
-  create(child: Omit<Child, 'id'>): Child {
-    const children = this.getAll();
-    const newChild: Child = {
-      ...child,
-      id: this.generateId()
-    };
-    children.push(newChild);
-    this.save(children);
-    return newChild;
-  }
-
-  update(id: string, updates: Omit<Child, 'id'>): Child | null {
-    const children = this.getAll();
-    const index = children.findIndex(child => child.id === id);
-    
-    if (index === -1) return null;
-    
-    children[index] = { ...children[index], ...updates };
-    this.save(children);
-    return children[index];
-  }
-
-  delete(id: string): boolean {
-    const children = this.getAll();
-    const filteredChildren = children.filter(child => child.id !== id);
-    
-    if (filteredChildren.length === children.length) return false;
-    
-    this.save(filteredChildren);
-    return true;
-  }
-
-  private save(children: Child[]): void {
+  async create(child: Omit<Child, 'id'>): Promise<Child> {
     try {
-      localStorage.setItem(this.storageKey, JSON.stringify(children));
+      return await apiService.create(child);
     } catch (error) {
-      console.error('Error saving vaccination records:', error);
+      console.error('Error creating vaccination record:', error);
+      throw error;
     }
   }
 
-  private generateId(): string {
-    return Date.now().toString() + Math.random().toString(36).substr(2, 9);
+  async update(id: string, updates: Omit<Child, 'id'>): Promise<Child | null> {
+    try {
+      return await apiService.update(id, updates);
+    } catch (error) {
+      console.error('Error updating vaccination record:', error);
+      throw error;
+    }
   }
 
-  private getInitialData(): Child[] {
-    const sampleData: Child[] = [
-      {
-        id: '1',
-        name: 'Sarah Johnson',
-        dateOfBirth: '2020-03-15',
-        gender: 'Female',
-        guardianName: 'Emily Johnson',
-        address: '123 Maple Street, Springfield, IL 62701',
-        vaccineName: 'MMR',
-        vaccinationDate: '2024-03-15',
-        nextDueDate: '2025-03-15',
-        notes: 'No adverse reactions observed. Child was cooperative during vaccination.'
-      },
-      {
-        id: '2',
-        name: 'Michael Chen',
-        dateOfBirth: '2019-07-22',
-        gender: 'Male',
-        guardianName: 'David Chen',
-        address: '456 Oak Avenue, Springfield, IL 62702',
-        vaccineName: 'DPT',
-        vaccinationDate: '2024-07-22',
-        nextDueDate: '2025-01-22',
-        notes: 'Mild fever reported 24 hours post-vaccination, resolved with acetaminophen.'
-      },
-      {
-        id: '3',
-        name: 'Aisha Patel',
-        dateOfBirth: '2021-11-08',
-        gender: 'Female',
-        guardianName: 'Priya Patel',
-        address: '789 Pine Road, Springfield, IL 62703',
-        vaccineName: 'Hepatitis B',
-        vaccinationDate: '2024-11-08',
-        nextDueDate: '2025-05-08',
-        notes: 'Second dose in series. Next appointment scheduled for booster.'
-      }
-    ];
+  async delete(id: string): Promise<boolean> {
+    try {
+      return await apiService.delete(id);
+    } catch (error) {
+      console.error('Error deleting vaccination record:', error);
+      throw error;
+    }
+  }
 
-    // Save sample data to localStorage if none exists
-    this.save(sampleData);
-    return sampleData;
+  // Fallback methods for localStorage
+  private getFromLocalStorage(): Child[] {
+    try {
+      const data = localStorage.getItem('vaccination_records');
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
+      console.error('Error loading from localStorage:', error);
+      return [];
+    }
   }
 }
 

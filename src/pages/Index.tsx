@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { VaccinationForm } from '../components/VaccinationForm';
 import { ChildrenList } from '../components/ChildrenList';
@@ -14,6 +13,7 @@ const Index = () => {
   const [editingChild, setEditingChild] = useState<Child | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterVaccine, setFilterVaccine] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadChildren();
@@ -23,9 +23,16 @@ const Index = () => {
     filterChildren();
   }, [children, searchTerm, filterVaccine]);
 
-  const loadChildren = () => {
-    const loadedChildren = vaccinationService.getAll();
-    setChildren(loadedChildren);
+  const loadChildren = async () => {
+    try {
+      setLoading(true);
+      const loadedChildren = await vaccinationService.getAll();
+      setChildren(loadedChildren);
+    } catch (error) {
+      toast.error('Failed to load vaccination records');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filterChildren = () => {
@@ -47,19 +54,22 @@ const Index = () => {
     setFilteredChildren(filtered);
   };
 
-  const handleSubmit = (childData: Omit<Child, 'id'>) => {
+  const handleSubmit = async (childData: Omit<Child, 'id'>) => {
     try {
+      setLoading(true);
       if (editingChild) {
-        vaccinationService.update(editingChild.id, childData);
+        await vaccinationService.update(editingChild.id, childData);
         toast.success('Vaccination record updated successfully!');
         setEditingChild(null);
       } else {
-        vaccinationService.create(childData);
+        await vaccinationService.create(childData);
         toast.success('New vaccination record added successfully!');
       }
-      loadChildren();
+      await loadChildren();
     } catch (error) {
       toast.error('Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -68,13 +78,16 @@ const Index = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     try {
-      vaccinationService.delete(id);
+      setLoading(true);
+      await vaccinationService.delete(id);
       toast.success('Vaccination record deleted successfully!');
-      loadChildren();
+      await loadChildren();
     } catch (error) {
       toast.error('Failed to delete record. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
