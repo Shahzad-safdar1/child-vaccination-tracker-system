@@ -55,7 +55,7 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                 <SelectValue placeholder="All vaccines" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All vaccines</SelectItem>
+                <SelectItem value="all">All vaccines</SelectItem>
                 {vaccines.map((vaccine) => (
                   <SelectItem key={vaccine} value={vaccine}>
                     {vaccine}

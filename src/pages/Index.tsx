@@ -38,7 +38,7 @@ const Index = () => {
       );
     }
 
-    if (filterVaccine) {
+    if (filterVaccine && filterVaccine !== 'all') {
       filtered = filtered.filter(child =>
         child.vaccineName.toLowerCase().includes(filterVaccine.toLowerCase())
       );
