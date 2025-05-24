@@ -34,6 +34,7 @@ app.get('/api/children', (req, res) => {
     const query = 'SELECT * FROM children ORDER BY created_at DESC';
     db.query(query, (err, results) => {
         if (err) {
+            console.error('Database query error:', err);
             res.status(500).json({ error: err.message });
             return;
         }
@@ -42,14 +43,15 @@ app.get('/api/children', (req, res) => {
         const transformedResults = results.map(child => ({
             id: child.id.toString(),
             name: child.name,
-            dateOfBirth: child.dob,
+            dob: child.dob,
             gender: child.gender,
-            guardianName: child.guardian_name,
+            guardian_name: child.guardian_name,
             address: child.address,
-            vaccineName: child.vaccine_name,
-            vaccinationDate: child.vaccination_date,
-            nextDueDate: child.next_due_date || '',
-            notes: child.notes || ''
+            vaccine_name: child.vaccine_name,
+            vaccination_date: child.vaccination_date,
+            next_due_date: child.next_due_date || '',
+            notes: child.notes || '',
+            created_at: child.created_at
         }));
         
         res.json(transformedResults);
@@ -63,16 +65,21 @@ app.post('/api/children', (req, res) => {
     const query = `INSERT INTO children (name, dob, gender, guardian_name, address, vaccine_name, vaccination_date, next_due_date, notes) 
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     
-    db.query(query, [name, dateOfBirth, gender, guardianName, address, vaccineName, vaccinationDate, nextDueDate, notes], (err, result) => {
+    const values = [name, dateOfBirth, gender, guardianName, address, vaccineName, vaccinationDate, nextDueDate || null, notes || ''];
+    
+    db.query(query, values, (err, result) => {
         if (err) {
+            console.error('Database insert error:', err);
             res.status(500).json({ error: err.message });
             return;
         }
+        
+        const insertId = result.insertId.toString();
         res.status(201).json({ 
             message: 'Child record added successfully', 
-            id: result.insertId.toString(),
+            id: insertId,
             child: {
-                id: result.insertId.toString(),
+                id: insertId,
                 name,
                 dateOfBirth,
                 gender,
@@ -80,8 +87,8 @@ app.post('/api/children', (req, res) => {
                 address,
                 vaccineName,
                 vaccinationDate,
-                nextDueDate,
-                notes
+                nextDueDate: nextDueDate || '',
+                notes: notes || ''
             }
         });
     });
@@ -95,11 +102,20 @@ app.put('/api/children/:id', (req, res) => {
     const query = `UPDATE children SET name=?, dob=?, gender=?, guardian_name=?, address=?, vaccine_name=?, vaccination_date=?, next_due_date=?, notes=? 
                    WHERE id=?`;
     
-    db.query(query, [name, dateOfBirth, gender, guardianName, address, vaccineName, vaccinationDate, nextDueDate, notes, id], (err, result) => {
+    const values = [name, dateOfBirth, gender, guardianName, address, vaccineName, vaccinationDate, nextDueDate || null, notes || '', id];
+    
+    db.query(query, values, (err, result) => {
         if (err) {
+            console.error('Database update error:', err);
             res.status(500).json({ error: err.message });
             return;
         }
+        
+        if (result.affectedRows === 0) {
+            res.status(404).json({ error: 'Child record not found' });
+            return;
+        }
+        
         res.json({ message: 'Child record updated successfully' });
     });
 });
@@ -111,9 +127,16 @@ app.delete('/api/children/:id', (req, res) => {
     
     db.query(query, [id], (err, result) => {
         if (err) {
+            console.error('Database delete error:', err);
             res.status(500).json({ error: err.message });
             return;
         }
+        
+        if (result.affectedRows === 0) {
+            res.status(404).json({ error: 'Child record not found' });
+            return;
+        }
+        
         res.json({ message: 'Child record deleted successfully' });
     });
 });

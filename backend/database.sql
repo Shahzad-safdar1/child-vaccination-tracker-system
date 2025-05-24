@@ -5,7 +5,7 @@ CREATE DATABASE IF NOT EXISTS children_vaccination;
 -- Use the database
 USE children_vaccination;
 
--- Create the children table
+-- Create the children table with all required fields
 CREATE TABLE IF NOT EXISTS children (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -19,6 +19,11 @@ CREATE TABLE IF NOT EXISTS children (
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Add missing columns if they don't exist (for existing databases)
+ALTER TABLE children 
+ADD COLUMN IF NOT EXISTS next_due_date DATE,
+ADD COLUMN IF NOT EXISTS notes TEXT;
 
 -- Insert sample data
 INSERT INTO children (name, dob, gender, guardian_name, address, vaccine_name, vaccination_date, next_due_date, notes) VALUES

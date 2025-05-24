@@ -19,9 +19,23 @@ class ApiService {
     try {
       const response = await fetch(`${API_BASE_URL}/children`);
       if (!response.ok) {
-        throw new Error('Failed to fetch children');
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-      return await response.json();
+      const data = await response.json();
+      
+      // Transform backend data to frontend format
+      return data.map((item: any) => ({
+        id: item.id.toString(),
+        name: item.name,
+        dateOfBirth: item.dob,
+        gender: item.gender,
+        guardianName: item.guardian_name,
+        address: item.address,
+        vaccineName: item.vaccine_name,
+        vaccinationDate: item.vaccination_date,
+        nextDueDate: item.next_due_date || '',
+        notes: item.notes || ''
+      }));
     } catch (error) {
       console.error('Error fetching children:', error);
       throw error;
@@ -30,20 +44,32 @@ class ApiService {
 
   async create(child: Omit<Child, 'id'>): Promise<Child> {
     try {
+      const backendData = {
+        name: child.name,
+        dateOfBirth: child.dateOfBirth,
+        gender: child.gender,
+        guardianName: child.guardianName,
+        address: child.address,
+        vaccineName: child.vaccineName,
+        vaccinationDate: child.vaccinationDate,
+        nextDueDate: child.nextDueDate,
+        notes: child.notes
+      };
+
       const response = await fetch(`${API_BASE_URL}/children`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(child),
+        body: JSON.stringify(backendData),
       });
       
       if (!response.ok) {
-        throw new Error('Failed to create child record');
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const result = await response.json();
-      return result.child;
+      return result.child || { ...child, id: result.id?.toString() || Date.now().toString() };
     } catch (error) {
       console.error('Error creating child:', error);
       throw error;
@@ -52,16 +78,28 @@ class ApiService {
 
   async update(id: string, child: Omit<Child, 'id'>): Promise<Child> {
     try {
+      const backendData = {
+        name: child.name,
+        dateOfBirth: child.dateOfBirth,
+        gender: child.gender,
+        guardianName: child.guardianName,
+        address: child.address,
+        vaccineName: child.vaccineName,
+        vaccinationDate: child.vaccinationDate,
+        nextDueDate: child.nextDueDate,
+        notes: child.notes
+      };
+
       const response = await fetch(`${API_BASE_URL}/children/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(child),
+        body: JSON.stringify(backendData),
       });
       
       if (!response.ok) {
-        throw new Error('Failed to update child record');
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       return { ...child, id };
@@ -78,7 +116,7 @@ class ApiService {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to delete child record');
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       return true;

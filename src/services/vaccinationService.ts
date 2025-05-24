@@ -20,8 +20,8 @@ class VaccinationService {
       return await apiService.getAll();
     } catch (error) {
       console.error('Error loading vaccination records:', error);
-      // Fallback to localStorage if API fails
-      return this.getFromLocalStorage();
+      // Return empty array if API fails and no localStorage fallback
+      return [];
     }
   }
 
@@ -30,7 +30,7 @@ class VaccinationService {
       return await apiService.create(child);
     } catch (error) {
       console.error('Error creating vaccination record:', error);
-      throw error;
+      throw new Error('Failed to create vaccination record. Please check your connection and try again.');
     }
   }
 
@@ -39,7 +39,7 @@ class VaccinationService {
       return await apiService.update(id, updates);
     } catch (error) {
       console.error('Error updating vaccination record:', error);
-      throw error;
+      throw new Error('Failed to update vaccination record. Please check your connection and try again.');
     }
   }
 
@@ -48,18 +48,7 @@ class VaccinationService {
       return await apiService.delete(id);
     } catch (error) {
       console.error('Error deleting vaccination record:', error);
-      throw error;
-    }
-  }
-
-  // Fallback methods for localStorage
-  private getFromLocalStorage(): Child[] {
-    try {
-      const data = localStorage.getItem('vaccination_records');
-      return data ? JSON.parse(data) : [];
-    } catch (error) {
-      console.error('Error loading from localStorage:', error);
-      return [];
+      throw new Error('Failed to delete vaccination record. Please check your connection and try again.');
     }
   }
 }
